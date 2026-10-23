@@ -8,6 +8,7 @@ import {
   QrCode,
   Settings,
 } from 'lucide-react'
+import { RhythmMark } from './RhythmMark'
 
 export type MainView = 'dashboard' | 'pantry' | 'add' | 'share' | 'about' | 'item'
 
@@ -29,16 +30,6 @@ const navItems: Array<{
   { view: 'add', label: 'Add item', icon: Plus },
   { view: 'share', label: 'Share', icon: QrCode },
 ]
-
-function RhythmMark() {
-  return (
-    <span className="brand-mark" aria-hidden="true">
-      <span />
-      <span />
-      <span />
-    </span>
-  )
-}
 
 export function AppShell({
   active,

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Camera, CameraOff, Keyboard, LoaderCircle, ShieldCheck } from 'lucide-react'
+import type { IScannerControls } from '@zxing/browser'
 import { Modal } from './Modal'
 
 interface ScannerModalProps {
@@ -19,10 +20,16 @@ const FORMATS = [
   'codabar',
 ]
 
+/**
+ * Camera scanning needs a secure page and a camera stream. The native
+ * BarcodeDetector is used where it exists (Android Chrome, ChromeOS); every
+ * other browser, including Chrome and Safari on iOS, uses the bundled ZXing
+ * decoder instead.
+ */
 export function canUseCameraScanner(): boolean {
   return (
     typeof window !== 'undefined' &&
-    typeof window.BarcodeDetector !== 'undefined' &&
+    window.isSecureContext === true &&
     typeof navigator !== 'undefined' &&
     Boolean(navigator.mediaDevices?.getUserMedia)
   )
@@ -31,6 +38,7 @@ export function canUseCameraScanner(): boolean {
 export function ScannerModal({ open, onClose, onDetected }: ScannerModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
+  const fallbackRef = useRef<IScannerControls | null>(null)
   const callbackRef = useRef(onDetected)
   const [status, setStatus] = useState<'starting' | 'scanning' | 'error'>('starting')
   const [error, setError] = useState('')
@@ -43,21 +51,34 @@ export function ScannerModal({ open, onClose, onDetected }: ScannerModalProps) {
     if (!open) return
     let cancelled = false
     let timer: number | undefined
+    let handled = false
 
     const stop = () => {
       if (timer) window.clearTimeout(timer)
+      fallbackRef.current?.stop()
+      fallbackRef.current = null
       streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
+    }
+
+    const accept = (rawValue: string) => {
+      if (handled) return
+      if (rawValue.replace(/\D/g, '').length < 6) return
+      handled = true
+      stop()
+      callbackRef.current(rawValue)
     }
 
     const start = async () => {
       setStatus('starting')
       setError('')
 
-      if (!canUseCameraScanner() || !window.BarcodeDetector) {
+      if (!canUseCameraScanner()) {
         setStatus('error')
         setError(
-          'Camera barcode scanning is not supported in this browser. Enter the barcode manually instead.',
+          window.isSecureContext === false
+            ? 'Camera access needs the secure (https) version of this page. Enter the barcode manually instead.'
+            : 'Camera access is not available in this browser. Enter the barcode manually instead.',
         )
         return
       }
@@ -81,30 +102,68 @@ export function ScannerModal({ open, onClose, onDetected }: ScannerModalProps) {
         video.srcObject = stream
         await video.play()
 
-        const supported = await window.BarcodeDetector.getSupportedFormats()
-        const formats = FORMATS.filter((format) => supported.includes(format))
-        const detector = new window.BarcodeDetector(
-          formats.length > 0 ? { formats } : undefined,
-        )
+        if (window.BarcodeDetector) {
+          const supported = await window.BarcodeDetector.getSupportedFormats()
+          const formats = FORMATS.filter((format) => supported.includes(format))
+          const detector = new window.BarcodeDetector(
+            formats.length > 0 ? { formats } : undefined,
+          )
 
-        setStatus('scanning')
+          setStatus('scanning')
 
-        const scan = async () => {
-          if (cancelled || !videoRef.current) return
-          try {
-            const codes = await detector.detect(videoRef.current)
-            const barcode = codes.find((code) => code.rawValue.replace(/\D/g, '').length >= 6)
-            if (barcode) {
-              stop()
-              callbackRef.current(barcode.rawValue)
-              return
+          const scan = async () => {
+            if (cancelled || !videoRef.current) return
+            try {
+              const codes = await detector.detect(videoRef.current)
+              const barcode = codes.find(
+                (code) => code.rawValue.replace(/\D/g, '').length >= 6,
+              )
+              if (barcode) {
+                accept(barcode.rawValue)
+                return
+              }
+            } catch {
+              // Some browsers reject a frame while the camera is still warming up.
             }
-          } catch {
-            // Some browsers reject a frame while the camera is still warming up.
+            if (!cancelled) timer = window.setTimeout(scan, 450)
           }
-          if (!cancelled) timer = window.setTimeout(scan, 450)
+          scan()
+          return
         }
-        scan()
+
+        // iOS Safari/Chrome, Firefox, and desktop Chrome on Windows have no
+        // BarcodeDetector. ZXing decodes the same video frames on device.
+        const [{ BrowserMultiFormatReader }, { BarcodeFormat, DecodeHintType }] =
+          await Promise.all([import('@zxing/browser'), import('@zxing/library')])
+
+        if (cancelled) return
+
+        const hints = new Map()
+        hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+          BarcodeFormat.EAN_13,
+          BarcodeFormat.EAN_8,
+          BarcodeFormat.UPC_A,
+          BarcodeFormat.UPC_E,
+          BarcodeFormat.CODE_128,
+          BarcodeFormat.CODE_39,
+          BarcodeFormat.ITF,
+          BarcodeFormat.CODABAR,
+        ])
+        hints.set(DecodeHintType.TRY_HARDER, true)
+
+        const reader = new BrowserMultiFormatReader(hints, {
+          delayBetweenScanAttempts: 220,
+        })
+
+        const controls = await reader.decodeFromVideoElement(video, (result) => {
+          if (result) accept(result.getText())
+        })
+        if (cancelled) {
+          controls.stop()
+          return
+        }
+        fallbackRef.current = controls
+        setStatus('scanning')
       } catch (caught) {
         if (cancelled) return
         const name = caught instanceof DOMException ? caught.name : ''
@@ -112,7 +171,7 @@ export function ScannerModal({ open, onClose, onDetected }: ScannerModalProps) {
           setError(
             'Camera permission was blocked. Allow camera access in your browser settings, or enter the barcode manually.',
           )
-        } else if (name === 'NotFoundError') {
+        } else if (name === 'NotFoundError' || name === 'OverconstrainedError') {
           setError('No camera was found. You can enter the barcode manually.')
         } else {
           setError(
@@ -151,7 +210,13 @@ export function ScannerModal({ open, onClose, onDetected }: ScannerModalProps) {
           </div>
         ) : (
           <>
-            <video ref={videoRef} className="scanner-video" muted playsInline aria-label="Camera viewfinder" />
+            <video
+              ref={videoRef}
+              className="scanner-video"
+              muted
+              playsInline
+              aria-label="Camera viewfinder"
+            />
             <div className="scanner-overlay" aria-hidden="true">
               <span className="scanner-corner top-left" />
               <span className="scanner-corner top-right" />

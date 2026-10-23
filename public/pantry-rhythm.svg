@@ -1,5 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#173f35"/>
-  <path d="M11 36h8l5-12 8 23 6-17 4 6h11" fill="none" stroke="#f7f1e4" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="52" cy="36" r="3.5" fill="#e8b44e"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Pantry Rhythm">
+  <rect width="64" height="64" rx="17" fill="#15382e"/>
+  <rect x="16.6" y="30.5" width="7" height="16.5" rx="3.5" fill="#f4ecdc" opacity="0.7"/>
+  <rect x="28.5" y="18" width="7" height="29" rx="3.5" fill="#e3a14a"/>
+  <rect x="40.4" y="24.5" width="7" height="22.5" rx="3.5" fill="#f4ecdc" opacity="0.9"/>
+  <rect x="16.6" y="50.5" width="30.8" height="1.5" rx="0.75" fill="#f4ecdc" opacity="0.28"/>
 </svg>

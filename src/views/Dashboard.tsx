@@ -81,6 +81,16 @@ export function Dashboard({
     }
   }
 
+  // How many items are due by the end of each of the next fourteen days.
+  const dayCounts = Array.from({ length: 14 }, (_, index) => {
+    const day = index + 1
+    return tracked.filter((item) => {
+      const estimate = estimates.get(item.id)
+      return estimate ? estimate.daysLeft <= day : false
+    }).length
+  })
+  const stripMax = Math.max(1, ...dayCounts)
+
   const dueItems = tracked
     .filter((item) => {
       const estimate = estimates.get(item.id)
@@ -144,16 +154,42 @@ export function Dashboard({
               </span>
             </div>
           </div>
-          <div className="welcome-rhythm" aria-hidden="true">
-            <div className="rhythm-orbit">
-              <span className="rhythm-ring ring-a" />
-              <span className="rhythm-ring ring-b" />
-              <span className="rhythm-ring ring-c" />
-              <span className="rhythm-core">
-                <span />
-                <span />
-                <span />
-              </span>
+          <div className="welcome-preview" aria-hidden="true">
+            <div className="preview-sheet">
+              <div className="preview-sheet-top">
+                <span>This week</span>
+                <span className="preview-live">
+                  <i /> 3 due
+                </span>
+              </div>
+              <div className="preview-row">
+                <div className="preview-row-head">
+                  <span className="preview-name">Oat milk</span>
+                  <span className="preview-days">6 days</span>
+                </div>
+                <span className="preview-track">
+                  <span style={{ width: '72%' }} />
+                </span>
+              </div>
+              <div className="preview-row is-low">
+                <div className="preview-row-head">
+                  <span className="preview-name">Coffee</span>
+                  <span className="preview-days">2 days</span>
+                </div>
+                <span className="preview-track">
+                  <span style={{ width: '26%' }} />
+                </span>
+              </div>
+              <div className="preview-row">
+                <div className="preview-row-head">
+                  <span className="preview-name">Olive oil</span>
+                  <span className="preview-days">18 days</span>
+                </div>
+                <span className="preview-track">
+                  <span style={{ width: '88%' }} />
+                </span>
+              </div>
+              <p className="preview-foot">Estimated from your own purchase history.</p>
             </div>
           </div>
         </section>
@@ -202,7 +238,7 @@ export function Dashboard({
       </header>
 
       <section className={`rhythm-hero${dueItems.length === 0 ? ' is-calm' : ''}`}>
-        <div className="rhythm-hero-copy">
+        <div className="rhythm-hero-top">
           <span className="hero-kicker">
             {dueItems.length === 0 ? (
               <>
@@ -214,16 +250,6 @@ export function Dashboard({
               </>
             )}
           </span>
-          <h2>
-            {counts[windowDays] === 0
-              ? 'Nothing needs your attention yet.'
-              : `${counts[windowDays]} ${counts[windowDays] === 1 ? 'item may need' : 'items may need'} a restock`}
-          </h2>
-          <p>
-            {counts[windowDays] === 0
-              ? 'Keep logging run-outs and the estimates will keep learning your household rhythm.'
-              : 'These are estimates, not guarantees. Correct any date that does not feel right.'}
-          </p>
           <div className="hero-window-switch" aria-label="Choose restock window">
             {([3, 7, 14] as const).map((window) => (
               <button
@@ -238,15 +264,29 @@ export function Dashboard({
             ))}
           </div>
         </div>
-        <div className="hero-rhythm" aria-hidden="true">
-          <span className="ring ring-one" />
-          <span className="ring ring-two" />
-          <span className="ring ring-three" />
-          <span className="rhythm-core">
-            <span />
-            <span />
-            <span />
-          </span>
+        <h2>
+          {counts[windowDays] === 0
+            ? 'Nothing needs your attention yet.'
+            : `${counts[windowDays]} ${counts[windowDays] === 1 ? 'item may need' : 'items may need'} a restock`}
+        </h2>
+        <p>
+          {counts[windowDays] === 0
+            ? 'Keep logging run-outs and the estimates will keep learning your household rhythm.'
+            : 'These are estimates, not guarantees. Correct any date that does not feel right.'}
+        </p>
+        <div className="hero-strip" aria-hidden="true">
+          {dayCounts.map((count, index) => (
+            <span
+              key={index}
+              className={`hero-strip-bar${index < windowDays ? ' in-window' : ''}`}
+              style={{ height: `${Math.max(7, Math.round((count / stripMax) * 100))}%` }}
+            />
+          ))}
+        </div>
+        <div className="hero-strip-axis" aria-hidden="true">
+          <span>Today</span>
+          <span>7 days</span>
+          <span>14 days</span>
         </div>
       </section>
 

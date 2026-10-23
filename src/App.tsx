@@ -36,6 +36,7 @@ import { getActivePurchase, estimateRestock } from './lib/prediction'
 import { todayISO } from './lib/dates'
 import { decodeShareToken, readShareTokenFromHash } from './lib/share'
 import { AppShell, type MainView } from './components/AppShell'
+import { RhythmMark } from './components/RhythmMark'
 import { Toast, type ToastMessage } from './components/Toast'
 import { AddTrackingModal } from './components/modals/AddTrackingModal'
 import {
@@ -308,11 +309,7 @@ export default function App() {
   if (!items || !settings) {
     return (
       <div className="boot-screen">
-        <span className="boot-mark">
-          <span />
-          <span />
-          <span />
-        </span>
+        <RhythmMark className="boot-mark" />
         <p>Opening your local pantry…</p>
       </div>
     )

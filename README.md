@@ -14,8 +14,7 @@ your own browser.
 ## What it does
 
 - **Find a product three ways:** search Open Food Facts, look up a barcode (manual entry or
-  on-device camera scanning where the browser supports `BarcodeDetector`), or create any item
-  manually.
+  on-device camera scanning), or create any item manually.
 - **Track real cycles:** purchase date, quantity, your own duration estimate, notes, and the
   actual run-out date. Restocking early closes the previous cycle without treating it as
   consumption history.
@@ -93,10 +92,12 @@ Attribution: database under ODbL, images under CC BY-SA. See the About page in t
 | Service | Used here? | What it actually is | Verdict |
 | --- | --- | --- | --- |
 | Open Food Facts | Yes — optional product search and barcode lookup | Open, collaborative food-product database with a public API | **Safe to use within its licences and API rules.** Commercial reuse is permitted under ODbL/DbCL/CC BY-SA conditions. The API is shared infrastructure with hard rate limits. |
+| ZXing (`@zxing/browser`, `@zxing/library`) | Yes — on-device camera decoding fallback | Apache-2.0 open-source barcode decoder that runs entirely in the browser | **Safe.** Apache-2.0 permits commercial use; no data leaves the device. |
 | OpenMRP | **No** | Cloud manufacturing/ERP platform (orders, inventory, production, purchasing, sales), not a product catalogue | **Not suitable and not needed.** No food catalogue or barcode lookup. The hosted API needs an organisation account and an admin-issued secret key. |
 
 Neither service receives your household records. Open Food Facts receives only the search term or
-barcode you explicitly submit; OpenMRP receives nothing because it is not integrated.
+barcode you explicitly submit; OpenMRP receives nothing because it is not integrated. Camera
+frames are decoded locally and are never uploaded.
 
 ### Open Food Facts
 
@@ -204,6 +205,7 @@ Reviewed 24 October 2026:
 - ODbL 1.0: <https://opendatacommons.org/licenses/odbl/1.0/>
 - DbCL 1.0: <https://opendatacommons.org/licenses/dbcl/1.0/>
 - CC BY-SA 3.0: <https://creativecommons.org/licenses/by-sa/3.0/deed.en>
+- ZXing licence (Apache-2.0): <https://github.com/zxing-js/library/blob/master/LICENSE>
 - OpenMRP terms: <https://openmrp.ai/terms-of-service>
 - OpenMRP privacy policy: <https://openmrp.ai/privacy-policy>
 - OpenMRP API repository and authentication notes: <https://github.com/open-mrp/api>
@@ -288,7 +290,10 @@ functions/api/            stateless Cloudflare Pages proxies
 ## Known limitations
 
 - Estimates are unvalidated and depend on honest run-out records.
-- Browser barcode scanning is not available in Safari/Firefox today; manual barcode entry is.
-- Camera scanning requires HTTPS (or localhost).
+- Camera scanning requires HTTPS (or localhost) and camera permission. It uses the native
+  `BarcodeDetector` where available (Android Chrome, ChromeOS) and otherwise loads a bundled
+  ZXing decoder on demand, which covers iOS Safari and Chrome, Firefox, and desktop Chrome.
+  The ZXing chunk is only downloaded when a scan starts, and frames are decoded on device.
+- Manual barcode entry remains available in every browser and needs no permission.
 - IndexedDB is per browser profile; it does not sync between devices.
 - Share payloads can grow beyond reliable QR capacity; the app falls back to the link/JSON.
