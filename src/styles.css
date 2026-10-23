@@ -383,7 +383,7 @@ code {
   color: var(--brand-deep);
   flex: 0 0 auto;
   display: inline-flex;
-  box-shadow: 0 7px 16px rgba(19, 58, 47, 0.18);
+  box-shadow: 0 6px 14px rgba(92, 74, 49, 0.18);
 }
 
 .brand-mark svg {
@@ -506,7 +506,7 @@ code {
   border-radius: 17px;
   color: var(--brand-deep);
   display: inline-flex;
-  box-shadow: 0 16px 32px rgba(19, 58, 47, 0.18);
+  box-shadow: 0 14px 30px rgba(92, 74, 49, 0.2);
   animation: pulse-soft 2.4s ease-in-out infinite;
 }
 

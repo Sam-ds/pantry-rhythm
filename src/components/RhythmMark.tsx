@@ -3,33 +3,25 @@ interface RhythmMarkProps {
 }
 
 /**
- * The shared brand mark: a pantry jar with a heartbeat, so the pantry and the
- * household rhythm read as one shape. Kept inline so it inherits colour and
- * stays crisp at any size.
+ * The shared brand mark: three pantry levels resting on a shelf line.
+ * Kept inline so it stays crisp at any size.
  */
 export function RhythmMark({ className = 'brand-mark' }: RhythmMarkProps) {
   return (
     <span className={className} aria-hidden="true">
       <svg viewBox="0 0 64 64" focusable="false">
-        <rect width="64" height="64" rx="17" fill="currentColor" />
-        <rect x="20" y="15.5" width="24" height="6.5" rx="3.25" fill="#e3a14a" />
+        <rect width="64" height="64" rx="17" fill="#e7d8bd" />
+        <rect x="16.6" y="30.5" width="7" height="16.5" rx="3.5" fill="#15382e" opacity="0.55" />
+        <rect x="28.5" y="18" width="7" height="29" rx="3.5" fill="#c25f3d" />
+        <rect x="40.4" y="24.5" width="7" height="22.5" rx="3.5" fill="#15382e" opacity="0.85" />
         <rect
-          x="15"
-          y="22"
-          width="34"
-          height="27.5"
-          rx="9.5"
-          fill="none"
-          stroke="#f4ecdc"
-          strokeWidth="3.6"
-        />
-        <path
-          d="M21 36h5.5l3-6.5 4.5 13 3-6.5H43"
-          fill="none"
-          stroke="#e3a14a"
-          strokeWidth="3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          x="16.6"
+          y="50.5"
+          width="30.8"
+          height="1.5"
+          rx="0.75"
+          fill="#15382e"
+          opacity="0.22"
         />
       </svg>
     </span>
