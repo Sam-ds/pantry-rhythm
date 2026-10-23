@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Camera, CameraOff, Keyboard, LoaderCircle, ShieldCheck } from 'lucide-react'
 import type { IScannerControls } from '@zxing/browser'
+import { primeScanSound, playScanSuccess } from '../lib/scanFeedback'
 import { Modal } from './Modal'
 
 interface ScannerModalProps {
@@ -53,6 +54,10 @@ export function ScannerModal({ open, onClose, onDetected }: ScannerModalProps) {
     let timer: number | undefined
     let handled = false
 
+    // Unlock audio inside the opening gesture so the confirmation chime can
+    // play when a code is found later.
+    primeScanSound()
+
     const stop = () => {
       if (timer) window.clearTimeout(timer)
       fallbackRef.current?.stop()
@@ -65,6 +70,7 @@ export function ScannerModal({ open, onClose, onDetected }: ScannerModalProps) {
       if (handled) return
       if (rawValue.replace(/\D/g, '').length < 6) return
       handled = true
+      playScanSuccess()
       stop()
       callbackRef.current(rawValue)
     }

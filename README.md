@@ -14,7 +14,7 @@ your own browser.
 ## What it does
 
 - **Find a product three ways:** search Open Food Facts, look up a barcode (manual entry or
-  on-device camera scanning), or create any item manually.
+  on-device camera scanning with a short confirmation chime), or create any item manually.
 - **Track real cycles:** purchase date, quantity, your own duration estimate, notes, and the
   actual run-out date. Restocking early closes the previous cycle without treating it as
   consumption history.

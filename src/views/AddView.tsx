@@ -25,6 +25,7 @@ import {
 } from '../lib/openfoodfacts'
 import { ProductThumb } from '../components/ProductThumb'
 import { ScannerModal, canUseCameraScanner } from '../components/ScannerModal'
+import { primeScanSound } from '../lib/scanFeedback'
 
 type AddTab = 'search' | 'barcode' | 'manual'
 
@@ -485,7 +486,10 @@ export function AddView({ onProductSelected, onCreateManual }: AddViewProps) {
             <button
               className="btn secondary"
               type="button"
-              onClick={() => setScannerOpen(true)}
+              onClick={() => {
+                primeScanSound()
+                setScannerOpen(true)
+              }}
               disabled={!cameraSupported}
               title={
                 cameraSupported
