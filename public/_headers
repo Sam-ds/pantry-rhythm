@@ -1,0 +1,6 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(self)
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://images.openfoodfacts.org https://world.openfoodfacts.org; font-src 'self'; connect-src 'self' https://world.openfoodfacts.org https://search.openfoodfacts.org; media-src 'self' blob:; object-src 'none'; upgrade-insecure-requests
