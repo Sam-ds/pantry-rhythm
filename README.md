@@ -4,8 +4,7 @@ A mobile-first, local-first household pantry tracker. It records what you buy, w
 actually runs out, and estimates when to restock next — while keeping the household data in
 your own browser.
 
-**Status:** working v0.1, deployable to GitHub Pages at
-<https://sam-ds.github.io/pantry-rhythm/>.
+**Status:** live at <https://sam-ds.github.io/pantry-rhythm/> (GitHub Pages, v0.1).
 **Terms review:** 24 October 2026 - see [Terms and licence review](#terms-and-licence-review-24-october-2026).
 
 > **Previously called Restock Radar.** The IndexedDB database and the `app` field in share
