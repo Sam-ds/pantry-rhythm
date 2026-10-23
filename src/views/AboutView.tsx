@@ -227,9 +227,10 @@ export function AboutView() {
               offline once entered.
             </p>
             <p>
-              Camera barcode scanning uses the browser's on-device Barcode Detection API where
-              the browser supports it. It never uploads camera frames. If it isn't supported,
-              enter the barcode by hand.
+              Camera barcode scanning decodes frames on your device. It uses the browser's built-in
+              Barcode Detection API where available, and a bundled open-source decoder (ZXing)
+              everywhere else, including iPhone Safari and Chrome. Frames are never uploaded. If
+              the camera is unavailable, enter the barcode by hand.
             </p>
           </section>
         </div>

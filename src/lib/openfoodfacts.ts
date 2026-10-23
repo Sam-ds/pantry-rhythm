@@ -85,9 +85,14 @@ let cooldownUntil = 0
 /**
  * Once a static host has answered the optional proxy route with HTML/404, stop
  * probing it for the rest of the session. This avoids a console error and an
- * extra round-trip on every later lookup.
+ * extra round-trip on every later lookup. GitHub Pages cannot run the Functions
+ * route at all, so skip the first probe there unless an absolute Worker URL was
+ * configured at build time.
  */
-let proxyUnavailable = false
+const localProxy = SEARCH_PROXY.startsWith('/') || PRODUCT_PROXY.startsWith('/')
+const staticGithubHost =
+  typeof location !== 'undefined' && /(^|\.)github\.io$/i.test(location.hostname)
+let proxyUnavailable = localProxy && staticGithubHost
 
 function pruneCache<T>(cache: Map<string, CacheEntry<T>>): void {
   const now = Date.now()

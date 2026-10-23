@@ -516,8 +516,9 @@ export function AddView({ onProductSelected, onCreateManual }: AddViewProps) {
             </p>
           ) : (
             <p className="inline-note">
-              <Camera size={14} aria-hidden="true" /> Camera scanning uses the browser's
-              on-device Barcode Detection API. No image leaves your device.
+              <Camera size={14} aria-hidden="true" /> Camera scanning decodes the barcode on this
+              device, using the browser's built-in detector or a bundled decoder. No image leaves
+              your device.
             </p>
           )}
 
