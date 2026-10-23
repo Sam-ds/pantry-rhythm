@@ -19,6 +19,7 @@ import { todayISO } from '../lib/dates'
 import {
   lookupBarcode,
   offAttribution,
+  offSearchPageUrl,
   ProductLookupError,
   searchProducts,
 } from '../lib/openfoodfacts'
@@ -334,6 +335,14 @@ export function AddView({ onProductSelected, onCreateManual }: AddViewProps) {
                   <button className="btn ghost small" onClick={() => void runSearch(searchedFor)}>
                     Try again
                   </button>
+                  <a
+                    className="btn ghost small"
+                    href={offSearchPageUrl(searchedFor)}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                  >
+                    Search Open Food Facts <ExternalLink size={14} aria-hidden="true" />
+                  </a>
                 </div>
               </div>
             </div>
@@ -470,7 +479,7 @@ export function AddView({ onProductSelected, onCreateManual }: AddViewProps) {
                 inputMode="numeric"
                 autoComplete="off"
                 placeholder="e.g. 737628064502"
-                pattern="[0-9\s-]*"
+                pattern="[0-9\s\-]*"
               />
             </label>
             <button

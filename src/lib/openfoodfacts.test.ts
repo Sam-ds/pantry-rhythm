@@ -1,8 +1,14 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { lookupBarcode, ProductLookupError, searchProducts } from './openfoodfacts'
+import {
+  lookupBarcode,
+  ProductLookupError,
+  resetLookupState,
+  searchProducts,
+} from './openfoodfacts'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  resetLookupState()
 })
 
 describe('Open Food Facts product mapping', () => {
@@ -95,5 +101,27 @@ describe('Open Food Facts product mapping', () => {
   it('surfaces unavailable services for the manual fallback', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Network error')))
     await expect(searchProducts('coffee')).rejects.toMatchObject({ code: 'unavailable' })
+  })
+
+  it('falls back to the direct endpoint when the proxy is missing', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response('<!doctype html><title>404</title>', {
+          status: 404,
+          headers: { 'Content-Type': 'text/html' },
+        }),
+      )
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(searchProducts('static host search')).rejects.toMatchObject({
+      code: 'unavailable',
+      message: expect.stringContaining('static copy'),
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(String(fetchMock.mock.calls[1][0])).toContain(
+      'world.openfoodfacts.org/cgi/search.pl',
+    )
   })
 })

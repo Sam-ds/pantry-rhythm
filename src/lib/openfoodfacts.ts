@@ -82,6 +82,13 @@ const inFlight = new Map<string, Promise<unknown>>()
 
 let cooldownUntil = 0
 
+/**
+ * Once a static host has answered the optional proxy route with HTML/404, stop
+ * probing it for the rest of the session. This avoids a console error and an
+ * extra round-trip on every later lookup.
+ */
+let proxyUnavailable = false
+
 function pruneCache<T>(cache: Map<string, CacheEntry<T>>): void {
   const now = Date.now()
   for (const [key, entry] of cache) {
@@ -150,6 +157,16 @@ function mapHit(hit: OffSearchHit): ProductCandidate | null {
 
 export function productPageUrl(barcode: string): string {
   return `https://world.openfoodfacts.org/product/${encodeURIComponent(barcode)}`
+}
+
+/**
+ * Public Open Food Facts search page, for when the API cannot be reached (for
+ * example, a static host without the proxy whose legacy endpoint fails CORS).
+ */
+export function offSearchPageUrl(query: string): string {
+  return `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(
+    query,
+  )}&search_simple=1&action=process`
 }
 
 async function fetchJson(
@@ -269,24 +286,39 @@ function mapSearchResponse(data: OffSearchResponse): ProductCandidate[] {
 }
 
 async function runSearch(query: string, signal?: AbortSignal): Promise<ProductCandidate[]> {
-  let proxyMissing = false
-  try {
-    const data = (await fetchJson(buildSearchPath(query), signal, { proxy: true })) as
-      | OffSearchResponse
-      | undefined
-    if (data) return mapSearchResponse(data)
-  } catch (error) {
-    if (error instanceof ProxyMissingError) proxyMissing = true
-    else throw error
+  let proxyMissing = proxyUnavailable
+  if (!proxyMissing) {
+    try {
+      const data = (await fetchJson(buildSearchPath(query), signal, { proxy: true })) as
+        | OffSearchResponse
+        | undefined
+      if (data) return mapSearchResponse(data)
+    } catch (error) {
+      if (error instanceof ProxyMissingError) {
+        proxyMissing = true
+        proxyUnavailable = true
+      } else throw error
+    }
   }
 
   // Only static hosts without the proxy take this path. The direct legacy
   // endpoint is best-effort and may be blocked by CORS in some browsers.
   if (proxyMissing) {
-    const data = (await fetchJson(buildLegacySearchPath(query), signal, {
-      proxy: false,
-    })) as OffSearchResponse
-    return mapSearchResponse(data)
+    try {
+      const data = (await fetchJson(buildLegacySearchPath(query), signal, {
+        proxy: false,
+      })) as OffSearchResponse
+      return mapSearchResponse(data)
+    } catch (error) {
+      if (error instanceof ProductLookupError) {
+        if (error.code === 'offline') throw error
+        if (error.message.includes('slow down')) throw error
+      }
+      throw new ProductLookupError(
+        'Search is unavailable from this static copy of the app. Barcode lookup and manual entry still work — or open the Open Food Facts search below.',
+        'unavailable',
+      )
+    }
   }
 
   return []
@@ -338,28 +370,32 @@ async function runBarcodeLookup(
   barcode: string,
   signal?: AbortSignal,
 ): Promise<ProductCandidate> {
-  let proxyMissing = false
-  try {
-    const data = (await fetchJson(buildProductPath(barcode), signal, {
-      proxy: true,
-    })) as OffProductResponse
-    if (data.status === 0 || !data.product) {
-      throw new ProductLookupError(
-        'No product matched that barcode. You can create it manually instead.',
-        'not-found',
-      )
+  let proxyMissing = proxyUnavailable
+  if (!proxyMissing) {
+    try {
+      const data = (await fetchJson(buildProductPath(barcode), signal, {
+        proxy: true,
+      })) as OffProductResponse
+      if (data.status === 0 || !data.product) {
+        throw new ProductLookupError(
+          'No product matched that barcode. You can create it manually instead.',
+          'not-found',
+        )
+      }
+      const mapped = mapHit(data.product)
+      if (!mapped) {
+        throw new ProductLookupError(
+          'The product record is missing a name. You can create it manually instead.',
+          'not-found',
+        )
+      }
+      return mapped
+    } catch (error) {
+      if (error instanceof ProxyMissingError) {
+        proxyMissing = true
+        proxyUnavailable = true
+      } else throw error
     }
-    const mapped = mapHit(data.product)
-    if (!mapped) {
-      throw new ProductLookupError(
-        'The product record is missing a name. You can create it manually instead.',
-        'not-found',
-      )
-    }
-    return mapped
-  } catch (error) {
-    if (error instanceof ProxyMissingError) proxyMissing = true
-    else throw error
   }
 
   if (proxyMissing) {
@@ -424,6 +460,15 @@ export async function lookupBarcode(
 
   inFlight.set(flightKey, promise)
   return promise
+}
+
+/** Clears in-memory lookup state. Used by tests and when household data resets. */
+export function resetLookupState(): void {
+  searchCache.clear()
+  productCache.clear()
+  inFlight.clear()
+  cooldownUntil = 0
+  proxyUnavailable = false
 }
 
 export const offAttribution = {

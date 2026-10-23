@@ -234,9 +234,11 @@ The build uses relative asset paths (`base: './'` in `vite.config.ts`), so the s
 works at a repository subpath or on a custom domain.
 
 **Open Food Facts on GitHub Pages:** GitHub Pages cannot run the two Cloudflare Functions.
-The client detects the missing proxy, falls back to direct Open Food Facts requests, and keeps
-manual entry available. Both OFF endpoints currently return `Access-Control-Allow-Origin: *`,
-but the browser cannot send the descriptive User-Agent that OFF asks for. If you want the
+The client detects the missing proxy and falls back to direct Open Food Facts requests, then to
+manual entry. Barcode lookup works because the product API allows browser CORS. Free-text
+search is best-effort: the fast search service does not send CORS headers, and the legacy
+`cgi/search.pl` endpoint is intermittently unavailable. When that happens the app explains the
+limitation and offers an Open Food Facts search link plus manual entry. For full search, the
 proxy, custom User-Agent, and edge caching, deploy the `functions/` folder to Cloudflare Pages
 instead. Household data never reaches either static host.
 
